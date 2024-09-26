@@ -284,41 +284,54 @@
 
             return (
                 <div className={`flex flex-col h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                    <header className={`flex justify-between items-center p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
-                        <nav className="flex space-x-2 overflow-x-auto pb-2">
+                    <header className={`z-50 flex flex-col ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+                        <nav className="flex flex-wrap justify-center p-2 space-y-2 space-x-2">
                             <button 
                                 onClick={startNewOrder}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'new-order' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                className={`flex-1 px-2 py-1 text-xs sm:text-sm transition-colors ${activeView === 'new-order' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                <i className="fas fa-plus mr-1"></i>Create New Order
+                                <i className="fas fa-plus mr-1"></i>New
+                            </button>
+                            <button 
+                                onClick={() => setShowCart(!showCart)}
+                                className={`flex-1 px-2 py-1 text-xs sm:text-sm transition-colors ${showCart ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                            >
+                                <div>Cart</div>
+                                {cart.length > 0 && (
+                                    <span className="bg-red-500 text-white rounded-full px-1 text-xs ml-1">
+                                        {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                                    </span>
+                                )}
                             </button>
                             <button 
                                 onClick={() => setActiveView('unpaid-orders')}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'unpaid-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                className={`flex-1 px-2 py-1 text-xs sm:text-sm transition-colors ${activeView === 'unpaid-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                Unpaid Orders <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs ml-1">{unpaidOrders.length}</span>
-                                <span className="ml-2 font-bold text-red-500">${unpaidOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</span>
+                                Unpaid <span className="bg-red-500 text-white rounded-full px-1 text-xs ml-1">{unpaidOrders.length}</span>
+                                <span className="ml-1 font-bold text-red-500">${unpaidOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</span>
                             </button>
                             <button 
                                 onClick={() => setActiveView('past-orders')}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'past-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                className={`flex-1 px-2 py-1 text-xs sm:text-sm transition-colors ${activeView === 'past-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                Past Orders <span className="bg-green-500 text-white rounded-full px-2 py-1 text-xs ml-1">{pastOrders.length}</span>
-                                <span className="ml-2 font-bold text-green-500">${pastOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</span>
+                                Paid <span className="bg-green-500 text-white rounded-full px-1 text-xs ml-1">{pastOrders.length}</span>
+                                <span className="ml-1 font-bold text-green-500">${pastOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</span>
                             </button>
                             <button 
                                 onClick={() => setActiveView('archived-orders')}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'archived-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                className={`flex-1 px-2 py-1 text-xs sm:text-sm transition-colors ${activeView === 'archived-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                Archived Orders <span className="bg-gray-500 text-white rounded-full px-2 py-1 text-xs ml-1">{archivedOrders.length}</span>
+                                Archived <span className="bg-gray-500 text-white rounded-full px-1 text-xs ml-1">{archivedOrders.length}</span>
                             </button>
                         </nav>
-                        <button 
-                            onClick={() => setDarkMode(!darkMode)}
-                            className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-yellow-400 text-gray-900' : 'bg-gray-800 text-white'}`}
-                        >
-                            <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
-                        </button>
+                        <div className="flex justify-end p-2">
+                            <button 
+                                onClick={() => setDarkMode(!darkMode)}
+                                className={`p-2 transition-colors ${darkMode ? 'bg-yellow-400 text-gray-900' : 'bg-gray-800 text-white'}`}
+                            >
+                                <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                            </button>
+                        </div>
                     </header>
                     <main className="flex-1 flex overflow-hidden">
                         <div className="flex-1 overflow-y-auto p-4">
@@ -410,8 +423,8 @@
                             )}
                         </div>
                         {activeView === 'new-order' && (showCart || window.innerWidth >= 768) && (
-                            <div className={`w-full md:w-80 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg overflow-y-auto`}>
-                                <div className="p-4">
+                            <div className={`${showCart ? 'fixed inset-0 z-40' : 'hidden'} md:relative md:block md:w-1/3 lg:w-1/4 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg overflow-y-auto`}>
+                                <div className="p-4 mt-[120px] md:mt-0">
                                     <h2 className="text-lg font-bold mb-4">Cart</h2>
                                     {cart.map(item => (
                                         <div key={item.id} className="flex justify-between items-center mb-2">
