@@ -14,7 +14,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
 
         const menuItems = [
             { id: 'D001', name: 'Espresso', price: 2.50, category: 'Coffee' },
@@ -43,7 +43,7 @@
             { id: 5, name: 'Table 5' },
         ];
 
-        function App() {
+        const App = () => {
             const [cart, setCart] = useState([]);
             const [activeCategory, setActiveCategory] = useState('All');
             const [total, setTotal] = useState(0);
@@ -58,6 +58,8 @@
             const [unpaidOrders, setUnpaidOrders] = useState([]);
             const [archivedOrders, setArchivedOrders] = useState([]);
             const [activeView, setActiveView] = useState('new-order');
+            const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+            const [orderBeingPaid, setOrderBeingPaid] = useState(null);
 
             const categories = ['All', ...new Set(menuItems.map(item => item.category))];
 
@@ -109,146 +111,214 @@
                 setOrderType(null);
                 setSelectedTable(null);
                 setActiveCategory('All');
-                setShowPastOrders(false);
-                setShowCart(false);
                 setActiveView('new-order');
             };
 
             const addToCart = (item) => {
-                const existingItem = cart.find(cartItem => cartItem.id === item.id);
-                if (existingItem) {
-                    setCart(cart.map(cartItem => 
-                        cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
-                    ));
-                } else {
-                    setCart([...cart, { ...item, quantity: 1 }]);
-                }
+                setCart(prevCart => {
+                    const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
+                    if (existingItem) {
+                        return prevCart.map(cartItem => 
+                            cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+                        );
+                    } else {
+                        return [...prevCart, { ...item, quantity: 1 }];
+                    }
+                });
             };
 
             const updateQuantity = (id, newQuantity) => {
-                if (newQuantity === 0) {
-                    setCart(cart.filter(item => item.id !== id));
-                } else {
-                    setCart(cart.map(item => 
-                        item.id === id ? { ...item, quantity: newQuantity } : item
-                    ));
-                }
+                setCart(prevCart => {
+                    if (newQuantity === 0) {
+                        return prevCart.filter(item => item.id !== id);
+                    } else {
+                        return prevCart.map(item => 
+                            item.id === id ? { ...item, quantity: newQuantity } : item
+                        );
+                    }
+                });
             };
 
-            const filteredItems = activeCategory === 'All' 
-                ? menuItems 
-                : menuItems.filter(item => item.category === activeCategory);
+            const filteredItems = useMemo(() => {
+                return activeCategory === 'All' 
+                    ? menuItems 
+                    : menuItems.filter(item => item.category === activeCategory);
+            }, [activeCategory]);
 
-            const handlePayment = (paymentMethod, payLater = false) => {
+            const handlePayment = async (paymentMethod, payLater = false) => {
                 if (orderType === 'dine-in' && !selectedTable) {
                     alert('Please select a table for dine-in orders.');
                     return;
                 }
-                const newOrder = {
-                    id: Date.now(),
-                    date: new Date().toLocaleString(),
-                    type: orderType,
-                    table: selectedTable ? selectedTable.name : null,
-                    items: cart,
-                    total: total,
-                    paymentMethod: payLater ? 'Unpaid' : paymentMethod,
-                };
-                if (payLater) {
-                    setUnpaidOrders(prevOrders => [newOrder, ...prevOrders]);
-                    setNotification(`Order added to unpaid orders`);
-                } else {
-                    setPastOrders(prevOrders => [newOrder, ...prevOrders]);
-                    setNotification(`Payment successful via ${paymentMethod}`);
+                setIsProcessingPayment(true);
+                try {
+                    // Simulate payment processing
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    const newOrder = orderBeingPaid || {
+                        id: Date.now(),
+                        date: new Date().toLocaleString(),
+                        type: orderType,
+                        table: selectedTable ? selectedTable.name : null,
+                        items: cart,
+                        total: total,
+                    };
+
+                    newOrder.paymentMethod = payLater ? 'Unpaid' : paymentMethod;
+
+                    if (payLater) {
+                        if (!orderBeingPaid) {
+                            setUnpaidOrders(prevOrders => [newOrder, ...prevOrders]);
+                        }
+                        setNotification(`Order added to unpaid orders`);
+                    } else {
+                        setPastOrders(prevOrders => [newOrder, ...prevOrders]);
+                        setNotification(`Payment successful via ${paymentMethod}`);
+                        if (orderBeingPaid) {
+                            setUnpaidOrders(prevOrders => prevOrders.filter(order => order.id !== orderBeingPaid.id));
+                        }
+                    }
+                    setCart([]);
+                    setOrderType(null);
+                    setSelectedTable(null);
+                    setShowPaymentOptions(false);
+                    setActiveView('new-order');
+                    setOrderBeingPaid(null);
+                } catch (error) {
+                    console.error('Payment processing error:', error);
+                    setNotification('Payment processing failed. Please try again.');
+                } finally {
+                    setIsProcessingPayment(false);
+                    setTimeout(() => setNotification(null), 3000);
                 }
-                setCart([]);
-                setOrderType(null);
-                setSelectedTable(null);
-                setShowPaymentOptions(false);
-                setShowCart(false);
-                setTimeout(() => setNotification(null), 3000);
             };
 
-            const toggleArchiveOrder = (orderId, currentList, setCurrentList, targetList, setTargetList) => {
-                const orderIndex = currentList.findIndex(order => order.id === orderId);
+            const toggleArchiveOrder = (orderId) => {
+                const orderIndex = pastOrders.findIndex(order => order.id === orderId);
                 if (orderIndex !== -1) {
-                    const [movedOrder] = currentList.splice(orderIndex, 1);
-                    setCurrentList([...currentList]);
-                    setTargetList(prevList => [movedOrder, ...prevList]);
+                    const updatedPastOrders = [...pastOrders];
+                    const [archivedOrder] = updatedPastOrders.splice(orderIndex, 1);
+                    archivedOrder.archived = true;
+                    setPastOrders(updatedPastOrders);
+                    setArchivedOrders(prevArchivedOrders => [archivedOrder, ...prevArchivedOrders]);
                 }
-            };
-
-            const archiveOrder = (orderId) => {
-                toggleArchiveOrder(orderId, pastOrders, setPastOrders, archivedOrders, setArchivedOrders);
             };
 
             const unarchiveOrder = (orderId) => {
-                toggleArchiveOrder(orderId, archivedOrders, setArchivedOrders, pastOrders, setPastOrders);
+                const orderIndex = archivedOrders.findIndex(order => order.id === orderId);
+                if (orderIndex !== -1) {
+                    const updatedArchivedOrders = [...archivedOrders];
+                    const [unarchivedOrder] = updatedArchivedOrders.splice(orderIndex, 1);
+                    unarchivedOrder.archived = false;
+                    setArchivedOrders(updatedArchivedOrders);
+                    setPastOrders(prevPastOrders => [unarchivedOrder, ...prevPastOrders]);
+                }
             };
 
-            const renderOrderList = (orders, isArchived = false) => (
-                <div>
+            const renderOrderList = useCallback((orders, isUnpaid = false) => (
+                <div className="space-y-6">
                     {orders.map(order => (
-                        <div key={order.id} className={`mb-4 p-4 rounded ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2">
-                                <span className="text-sm">{order.date}</span>
-                                <span className="text-sm">{order.type} {order.table && `- ${order.table}`}</span>
+                        <div key={order.id} className={`p-6 rounded-lg shadow-lg ${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'} transition-all duration-300 hover:shadow-xl`}>
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-sm font-medium">{order.date}</span>
+                                <span className={`text-sm font-medium px-3 py-1 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>{order.type} {order.table && `- ${order.table}`}</span>
                             </div>
-                            {order.items.map(item => (
-                                <div key={item.id} className="flex justify-between text-sm">
-                                    <span>{item.name} x{item.quantity}</span>
-                                    <span>${(item.price * item.quantity).toFixed(2)}</span>
-                                </div>
-                            ))}
-                            <div className="mt-2 flex justify-between items-center">
-                                <span className="font-bold">Total: ${order.total.toFixed(2)}</span>
-                                <span className="text-sm">Paid via: {order.paymentMethod}</span>
-                                <button 
-                                    onClick={() => isArchived ? unarchiveOrder(order.id) : archiveOrder(order.id)}
-                                    className={`px-2 py-1 text-sm rounded ${isArchived ? 'bg-blue-500' : 'bg-yellow-500'} text-white`}
-                                >
-                                    {isArchived ? 'Unarchive' : 'Archive'}
-                                </button>
+                            <div className="space-y-2">
+                                {order.items.map(item => (
+                                    <div key={item.id} className="flex justify-between text-sm items-center">
+                                        <span className="flex-1">{item.name}</span>
+                                        <span className="mx-4 text-gray-500">x{item.quantity}</span>
+                                        <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-4 flex flex-wrap justify-between items-center">
+                                <span className="text-lg font-bold">Total: ${order.total.toFixed(2)}</span>
+                                <span className={`text-sm px-3 py-1 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>{order.paymentMethod}</span>
+                                {isUnpaid ? (
+                                    <div className="mt-4 w-full flex justify-end space-x-3">
+                                        <button onClick={() => modifyOrder(order.id)} className="px-4 py-2 text-sm rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50">
+                                            <i className="fas fa-edit mr-2"></i>Modify
+                                        </button>
+                                        <button onClick={() => payOrder(order.id)} className="px-4 py-2 text-sm rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                                            <i className="fas fa-credit-card mr-2"></i>Pay
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        onClick={() => order.archived ? unarchiveOrder(order.id) : toggleArchiveOrder(order.id)}
+                                        className={`mt-4 px-4 py-2 text-sm rounded-full ${order.archived ? 'bg-blue-500 hover:bg-blue-600' : 'bg-yellow-500 hover:bg-yellow-600'} text-white transition-colors focus:outline-none focus:ring-2 focus:ring-opacity-50 ${order.archived ? 'focus:ring-blue-500' : 'focus:ring-yellow-500'}`}
+                                    >
+                                        <i className={`fas ${order.archived ? 'fa-box-open' : 'fa-archive'} mr-2`}></i>
+                                        {order.archived ? 'Unarchive' : 'Archive'}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
-            );
+            ), [darkMode, toggleArchiveOrder, unarchiveOrder, modifyOrder, payOrder]);
+
+            const modifyOrder = (orderId) => {
+                const orderToModify = unpaidOrders.find(order => order.id === orderId);
+                if (orderToModify) {
+                    setCart(orderToModify.items);
+                    setOrderType(orderToModify.type);
+                    setSelectedTable(orderToModify.table ? tables.find(table => table.name === orderToModify.table) : null);
+                    setActiveView('new-order');
+                    setUnpaidOrders(unpaidOrders.filter(order => order.id !== orderId));
+                }
+            };
+
+            const payOrder = (orderId) => {
+                const orderToPay = unpaidOrders.find(order => order.id === orderId);
+                if (orderToPay) {
+                    setOrderBeingPaid(orderToPay);
+                    setShowPaymentOptions(true);
+                    setCart(orderToPay.items);
+                    setTotal(orderToPay.total);
+                    setOrderType(orderToPay.type);
+                    setSelectedTable(orderToPay.table ? tables.find(table => table.name === orderToPay.table) : null);
+                }
+            };
 
             return (
-                <div className={`flex flex-col h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}>
-                    <header className={`flex justify-between items-center p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-                        <nav className="flex space-x-2">
+                <div className={`flex flex-col h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                    <header className={`flex justify-between items-center p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+                        <nav className="flex space-x-2 overflow-x-auto pb-2">
                             <button 
                                 onClick={startNewOrder}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded ${activeView === 'new-order' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'new-order' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                <i className="fas fa-plus mr-1"></i>New Order
+                                <i className="fas fa-plus mr-1"></i>Create New Order
                             </button>
                             <button 
                                 onClick={() => setActiveView('unpaid-orders')}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded ${activeView === 'unpaid-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'unpaid-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                Unpaid Orders <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs">{unpaidOrders.length}</span>
-                            </button>
-                            <button 
-                                onClick={() => setActiveView('archived-orders')}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded ${activeView === 'archived-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
-                            >
-                                Archived Orders <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs">{archivedOrders.length}</span>
+                                Unpaid Orders <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs ml-1">{unpaidOrders.length}</span>
+                                <span className="ml-2 font-bold text-red-500">${unpaidOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</span>
                             </button>
                             <button 
                                 onClick={() => setActiveView('past-orders')}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded ${activeView === 'past-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'past-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                Past Orders <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs">{pastOrders.length}</span>
+                                Past Orders <span className="bg-green-500 text-white rounded-full px-2 py-1 text-xs ml-1">{pastOrders.length}</span>
+                                <span className="ml-2 font-bold text-green-500">${pastOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</span>
                             </button>
                             <button 
-                                onClick={() => setDarkMode(!darkMode)}
-                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded ${darkMode ? 'bg-yellow-400 text-gray-900' : 'bg-gray-800 text-white'}`}
+                                onClick={() => setActiveView('archived-orders')}
+                                className={`px-3 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-full transition-colors ${activeView === 'archived-orders' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                             >
-                                <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                                Archived Orders <span className="bg-gray-500 text-white rounded-full px-2 py-1 text-xs ml-1">{archivedOrders.length}</span>
                             </button>
                         </nav>
+                        <button 
+                            onClick={() => setDarkMode(!darkMode)}
+                            className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-yellow-400 text-gray-900' : 'bg-gray-800 text-white'}`}
+                        >
+                            <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                        </button>
                     </header>
                     <main className="flex-1 flex overflow-hidden">
                         <div className="flex-1 overflow-y-auto p-4">
@@ -305,7 +375,7 @@
                                             </div>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                                 {filteredItems.map(item => (
-                                                    <button
+                                                    <button 
                                                         key={item.id}
                                                         onClick={() => addToCart(item)}
                                                         className={`p-2 rounded shadow text-center ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-50'}`}
@@ -323,13 +393,13 @@
                             {activeView === 'unpaid-orders' && (
                                 <div>
                                     <h2 className="text-lg font-bold mb-4">Unpaid Orders</h2>
-                                    {renderOrderList(unpaidOrders)}
+                                    {renderOrderList(unpaidOrders, true)}
                                 </div>
                             )}
                             {activeView === 'archived-orders' && (
                                 <div>
                                     <h2 className="text-lg font-bold mb-4">Archived Orders</h2>
-                                    {renderOrderList(archivedOrders, true)}
+                                    {renderOrderList(archivedOrders)}
                                 </div>
                             )}
                             {activeView === 'past-orders' && (
@@ -346,10 +416,10 @@
                                     {cart.map(item => (
                                         <div key={item.id} className="flex justify-between items-center mb-2">
                                             <span className="text-sm">{item.name}</span>
-                                            <div>
-                                                <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className={`px-2 py-1 text-sm rounded ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>-</button>
-                                                <span className="mx-2 text-sm">{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className={`px-2 py-1 text-sm rounded ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>+</button>
+                                            <div className="flex items-center">
+                                                <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className={`px-2 py-1 text-sm rounded-l ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} transition-colors`}>-</button>
+                                                <span className="px-2 py-1 text-sm">{item.quantity}</span>
+                                                <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className={`px-2 py-1 text-sm rounded-r ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} transition-colors`}>+</button>
                                             </div>
                                         </div>
                                     ))}
@@ -361,7 +431,7 @@
                                     </div>
                                     <button 
                                         onClick={() => setShowPaymentOptions(true)}
-                                        className={`w-full py-2 rounded ${darkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white`}
+                                        className={`w-full py-2 rounded transition-colors ${darkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white`}
                                         disabled={cart.length === 0 || !orderType}
                                     >
                                         Pay
@@ -375,18 +445,26 @@
                             <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                 <h2 className="text-lg font-bold mb-4">Select Payment Method</h2>
                                 <div className="space-y-2">
-                                    <button onClick={() => handlePayment('Cash')} className="w-full py-2 bg-green-500 text-white rounded">Cash</button>
-                                    <button onClick={() => handlePayment('Credit Card')} className="w-full py-2 bg-blue-500 text-white rounded">Credit Card</button>
-                                    <button onClick={() => handlePayment('Online Banking')} className="w-full py-2 bg-purple-500 text-white rounded">Online Banking</button>
-                                    <button onClick={() => handlePayment('', true)} className="w-full py-2 bg-yellow-500 text-white rounded">Pay Later</button>
+                                    <button onClick={() => handlePayment('Cash')} className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Cash</button>
+                                    <button onClick={() => handlePayment('Credit Card')} className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">Credit Card</button>
+                                    <button onClick={() => handlePayment('Online Banking')} className="w-full py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors">Online Banking</button>
+                                    <button onClick={() => handlePayment('', true)} className="w-full py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors">Pay Later</button>
                                 </div>
-                                <button onClick={() => setShowPaymentOptions(false)} className="mt-4 w-full py-2 bg-gray-300 text-gray-800 rounded">Cancel</button>
+                                <button onClick={() => {
+                                    setShowPaymentOptions(false);
+                                    setOrderBeingPaid(null);
+                                }} className="mt-4 w-full py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors">Cancel</button>
                             </div>
                         </div>
                     )}
                     {notification && (
-                        <div className="fixed bottom-4 right-4 bg-green-500 text-white p-2 rounded shadow">
+                        <div className="fixed bottom-4 right-4 bg-green-500 text-white p-2 rounded shadow animate-fade-in-out">
                             {notification}
+                        </div>
+                    )}
+                    {isProcessingPayment && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
                         </div>
                     )}
                 </div>
