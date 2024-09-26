@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TechBlog - Exploring Ideas, Sharing Knowledge</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.7.5/dist/css/foundation.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/foundation-sites@6.7.5/dist/js/foundation.min.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --primary-color: #1a237e;
+            --secondary-color: #ff5722;
+            --text-color: #333;
+            --light-bg: #f5f5f5;
+            --white: #ffffff;
+            --transition: all 0.3s ease;
+        }
+
+        body { 
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.8;
+            font-size: 16px;
+        }
+
+        .header { 
+            background-color: var(--primary-color); 
+            padding: 10px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header, .header ul { 
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .header .menu { 
+            display: none;
+        }
+
+        .header .menu a { 
+            color: var(--white); 
+            font-weight: 400;
+            transition: var(--transition);
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: block;
+        }
+
+        .header .menu a:hover { 
+            color: var(--secondary-color); 
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--white);
+            transition: var(--transition);
+        }
+
+        .header-title:hover {
+            color: var(--secondary-color);
+        }
+
+        .mobile-menu-icon {
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: block;
+        }
+
+        .mobile-menu-icon:hover {
+            color: var(--secondary-color);
+        }
+
+        .input-group {
+            margin-top: 10px;
+        }
+
+        .subheader {
+            color: var(--primary-color);
+        }
+
+        .callout.large.primary { 
+            border-radius: 0;    
+            background-color: var(--secondary-color); 
+            color: var(--white);
+            padding: 60px 0;
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .callout.large.primary::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            animation: shine 10s infinite linear;
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .callout.large.primary h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: auto;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .callout.large.primary h2 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .blog-post { 
+            margin-bottom: 2rem; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--white);
+            transition: var(--transition);
+        }
+
+        .blog-post:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transform: translateY(-5px);
+        }
+
+        .blog-post h3 { 
+            color: var(--primary-color); 
+            padding: 20px 20px 0;   
+            font-weight: 700;
+            transition: var(--transition);
+            font-size: 1.2rem;
+        }
+
+        .blog-post:hover h3 {
+            color: var(--secondary-color);
+        }
+
+        .blog-post .thumbnail-container { 
+            overflow: hidden;
+            height: 200px;
+        }
+
+        .blog-post .thumbnail { 
+            border: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .blog-post:hover .thumbnail {
+            transform: scale(1.05);
+        }
+
+        .blog-post p {
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .callout { 
+            padding: 0;
+            margin-bottom: 0;
+        }
+
+        .callout ul.menu {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            background-color: var(--primary-color);
+            padding: 10px;
+        }
+
+        .callout ul.menu li {
+            margin-bottom: 5px;
+            flex: 0 0 100%;
+        }
+
+        .callout ul.menu li a {
+            color: var(--white);
+            transition: var(--transition);
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: block;
+        }
+
+        .callout ul.menu li a:hover {
+            color: var(--secondary-color);
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .pagination {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .pagination .current { 
+            background-color: var(--secondary-color); 
+        }
+
+        .pagination a { 
+            color: var(--secondary-color); 
+            transition: var(--transition);
+        }
+
+        .pagination a:hover {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 30px 20px;
+        }
+
+        footer h5 {
+            color: var(--secondary-color);
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        footer .menu a {
+            color: var(--white);
+            transition: var(--transition);
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        footer .menu a:hover {
+            color: var(--secondary-color);
+            transform: translateX(5px);
+        }
+
+        .search-input {
+            border-radius: 25px;
+            border: none;
+            height: 50px;
+            vertical-align: middle;
+            transition: var(--transition);
+            padding-left: 20px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 2px var(--secondary-color);
+        }
+
+        .search-button {
+            border-radius: 25px;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            height: 50px;
+            vertical-align: middle;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .search-button:hover {
+            background-color: darken(var(--secondary-color), 10%);
+        }
+
+        .sidebar {
+            background-color: var(--white);
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: var(--transition);
+        }
+
+        .sidebar:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .sidebar h4 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .sidebar h4::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background-color: var(--secondary-color);
+            transition: var(--transition);
+        }
+
+        .sidebar:hover h4::after {
+            width: 100px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar ul li a {
+            color: var(--text-color);
+            transition: var(--transition);
+            display: inline-block;
+            position: relative;
+        }
+
+        .sidebar ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--secondary-color);
+            transition: var(--transition);
+        }
+
+        .sidebar ul li a:hover {
+            color: var(--secondary-color);
+        }
+
+        .sidebar ul li a:hover::after {
+            width: 100%;
+        }
+
+        .row {
+            max-width: 75rem;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .medium-8, .large-8 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .columns {
+            max-width: 100%;
+            padding-left: 0.9375rem;
+            padding-right: 0.9375rem;
+            padding-top: 0.9375rem;
+            padding-bottom: 0.9375rem;
+        }
+
+        @media screen and (min-width: 40em) {
+            .header .menu {
+                display: flex;
+                justify-content: flex-end;
+            }
+            .mobile-menu-icon {
+                display: none;
+            }
+            .search-input {
+                width: calc(100% - 100px);
+                margin-bottom: 0;
+            }
+            .search-button {
+                width: 95px;
+                margin-left: -5px;
+            }
+            .callout ul.menu li {
+                flex: 0 0 auto;
+                margin-bottom: 0;
+            }
+            .callout.large.primary {
+                padding: 120px 0;
+                min-height: 450px;
+            }
+            .callout.large.primary h1 {
+                font-size: 4.5rem;
+                margin: auto;
+            }
+            .callout.large.primary h2 {
+                font-size: 2rem;
+            }
+            .medium-8, .large-8 {
+                flex: 0 0 66.66667%;
+                max-width: 66.66667%;
+            }
+            .row {
+                flex-wrap: nowrap;
+            }
+        }
+
+        @media screen and (min-width: 64em) {
+            .header-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="grid-container">
+            <div class="grid-x">
+                <div class="cell small-6 medium-3">
+                    <a href="#" class="header-title">TechBlog</a>
+                </div>
+                <div class="cell small-6 medium-9 text-right">
+                    <span class="mobile-menu-icon"><i class="fas fa-bars"></i></span>
+                    <ul class="menu">
+                        <li><a href="#"><i class="fas fa-home"></i> Home</a></li>
+                        <li><a href="#"><i class="fas fa-newspaper"></i> Articles</a></li>
+                        <li><a href="#"><i class="fas fa-lightbulb"></i> Topics</a></li>
+                        <li><a href="#"><i class="fas fa-users"></i> Community</a></li>
+                        <li><a href="#"><i class="fas fa-info-circle"></i> About Us</a></li>
+                        <li><a href="#"><i class="fas fa-envelope"></i> Get in Touch</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="grid-x">
+                <div class="cell small-12 medium-8 large-6">
+                    <div class="input-group">
+                        <input class="input-group-field search-input" type="search" placeholder="Search for articles, topics, or authors...">
+                        <div class="input-group-button">
+                            <button type="button" class="button search-button">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="hero callout large primary">
+        <div class="row column text-center small-text-center">
+            <h1 class="text-center">TechBlog</h1>
+            <h2 class="subheader">Exploring Ideas, Sharing Knowledge</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="medium-8 large-8 columns">
+            <div class="blog-post">
+                <h3>The Future of Web Development <small>3/6/2024</small></h3>
+                <div class="thumbnail-container">
+                    <img class="thumbnail" src="https://ipsum.photos/get" alt="Web Development">
+                </div>
+                <p>As we delve into the ever-evolving world of web development, new technologies and frameworks continue to shape the landscape. From progressive web apps to serverless architectures, the future promises exciting possibilities for developers and users alike.</p>
+                <div class="callout">
+                    <ul class="menu">
+                        <li><a href="#"><i class="fas fa-user"></i> Author: Jane Doe</a></li>
+                        <li><a href="#"><i class="fas fa-comments"></i> Comments: 15</a></li>
+                        <li><a href="#"><i class="fas fa-tags"></i> Tags: Web Development, Technology</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="blog-post">
+                <h3>Mastering Responsive Design <small>3/6/2024</small></h3>
+                <div class="thumbnail-container">
+                    <img class="thumbnail" src="https://ipsum.photos/get" alt="Responsive Design">
+                </div>
+                <p>In today's multi-device world, responsive design is more crucial than ever. Learn the best practices and techniques to create seamless user experiences across desktops, tablets, and smartphones. Discover how to use flexible grids, media queries, and fluid images to your advantage.</p>
+                <div class="callout">
+                    <ul class="menu">
+                        <li><a href="#"><i class="fas fa-user"></i> Author: John Smith</a></li>
+                        <li><a href="#"><i class="fas fa-comments"></i> Comments: 8</a></li>
+                        <li><a href="#"><i class="fas fa-tags"></i> Tags: Responsive Design, CSS</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="blog-post">
+                <h3>The Rise of AI in Web Applications <small>3/6/2024</small></h3>
+                <div class="thumbnail-container">
+                    <img class="thumbnail" src="https://ipsum.photos/get" alt="AI in Web Applications">
+                </div>
+                <p>Artificial Intelligence is revolutionizing the way we interact with web applications. From chatbots to personalized recommendations, AI is enhancing user experiences and streamlining processes. Explore how you can integrate AI into your web projects and stay ahead of the curve.</p>
+                <div class="callout">
+                    <ul class="menu">
+                        <li><a href="#"><i class="fas fa-user"></i> Author: Emily Chen</a></li>
+                        <li><a href="#"><i class="fas fa-comments"></i> Comments: 23</a></li>
+                        <li><a href="#"><i class="fas fa-tags"></i> Tags: AI, Web Applications</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row column">
+                <ul class="pagination" role="navigation" aria-label="Pagination">
+                    <li class="disabled">Previous</li>
+                    <li class="current"><span class="show-for-sr">You're on page</span> 1</li>
+                    <li><a href="#" aria-label="Page 2">2</a></li>
+                    <li><a href="#" aria-label="Page 3">3</a></li>
+                    <li><a href="#" aria-label="Page 4">4</a></li>
+                    <li><a href="#" aria-label="Next page">Next</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="medium-4 large-4 columns">
+            <div class="sidebar">
+                <h4>Categories</h4>
+                <ul>
+                    <li><a href="#">Web Development</a></li>
+                    <li><a href="#">UI/UX Design</a></li>
+                    <li><a href="#">Mobile Development</a></li>
+                    <li><a href="#">Artificial Intelligence</a></li>
+                    <li><a href="#">Cloud Computing</a></li>
+                </ul>
+            </div>
+            <div class="sidebar">
+                <h4>Recent Posts</h4>
+                <ul>
+                    <li><a href="#">The Future of Web Development</a></li>
+                    <li><a href="#">Mastering Responsive Design</a></li>
+                    <li><a href="#">The Rise of AI in Web Applications</a></li>
+                    <li><a href="#">5 Essential CSS Tricks for Web Developers</a></li>
+                    <li><a href="#">Building Scalable Web Applications with Node.js</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="grid-container">
+            <div class="grid-x grid-padding-x">
+                <div class="cell small-12 medium-4 large-4">
+                    <h5>About Us</h5>
+                    <p>We are passionate about sharing knowledge and exploring the latest trends in web development.</p>
+                </div>
+                <div class="cell small-12 medium-4 large-4">
+                    <h5>Quick Links</h5>
+                    <ul class="menu vertical">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="cell small-12 medium-4 large-4">
+                    <h5>Follow Us</h5>
+                    <ul class="menu">
+                        <li><a href="#"><i class="fab fa-facebook fa-2x"></i></a></li>
+                        <li><a href="#"><i class="fab fa-twitter fa-2x"></i></a></li>
+                        <li><a href="#"><i class="fab fa-linkedin fa-2x"></i></a></li>
+                        <li><a href="#"><i class="fab fa-github fa-2x"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="grid-x">
+                <div class="cell">
+                    <hr>
+                    <p class="text-center">&copy; 2024 TechBlog. All rights reserved. Illustrated by tanghoong</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        $(document).foundation();
+        
+        // Mobile menu toggle
+        $('.mobile-menu-icon').click(function() {
+            $('.header .menu').slideToggle();
+        });
+
+        // Handle window resize
+        $(window).resize(function() {
+            if ($(window).width() > 640) {
+                $('.header .menu').show();
+            } else {
+                $('.header .menu').hide();
+            }
+        });
+
+        // Adjust search component on mobile
+        function adjustSearch() {
+            if ($(window).width() <= 640) {
+                $('.search-input, .search-button').css('width', '100%');
+                $('.search-input').css('margin', '0');
+                $('.search-button').css('margin-left', '0');
+            } else {
+                $('.search-input').css('width', 'calc(100% - 100px)');
+                $('.search-button').css('width', '95px');
+                $('.search-button').css('margin-left', '-5px');
+            }
+        }
+
+        // Call adjustSearch on page load and window resize
+        $(document).ready(adjustSearch);
+        $(window).resize(adjustSearch);
+
+        // Smooth scroll to top
+        $('a[href="#top"]').click(function() {
+            $('html, body').animate({scrollTop: 0}, 'slow');
+            return false;
+        });
+
+        // Add animation to blog posts on scroll
+        $(window).scroll(function() {
+            $('.blog-post').each(function() {
+                var postPosition = $(this).offset().top;
+                var topOfWindow = $(window).scrollTop();
+                if (postPosition < topOfWindow + $(window).height() - 200) {
+                    $(this).addClass('animated fadeInUp');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

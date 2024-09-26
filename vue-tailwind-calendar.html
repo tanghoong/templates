@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Calendar App</title>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js" as="script">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@heroicons/vue@2.0.18/dist/vue-heroicons.min.js" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    </noscript>
+    <script src="https://cdn.jsdelivr.net/npm/@heroicons/vue@2.0.18/dist/vue-heroicons.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+        }
+        .event-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .today-circle {
+            border: 2px solid #4F46E5;
+            border-radius: 50%;
+        }
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col h-full">
+    <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6 mt-4">Vue Calendar App</h1>
+    <div id="app" class="container mx-auto bg-white rounded-xl shadow-lg flex-grow flex flex-col min-h-screen">
+        <div class="flex flex-col lg:flex-row p-4 flex-grow">
+            <div class="lg:w-2/3 lg:pr-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center">
+                        <button @click="goToToday" class="mr-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div @click="showMonthYearSelector = true" class="text-lg font-semibold text-gray-800 cursor-pointer hover:text-indigo-600 transition duration-300">
+                            {{ currentMonthName }} {{ currentYear }}
+                        </div>
+                    </div>
+                    <div class="flex">
+                        <button @click="previousMonth" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold p-2 rounded-lg transition duration-300 ease-in-out mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <button @click="nextMonth" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold p-2 rounded-lg transition duration-300 ease-in-out">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-7 gap-2">
+                    <div v-for="day in daysOfWeek" :key="day" class="text-center font-semibold text-gray-600 py-2">{{ day }}</div>
+                    <div v-for="(day, index) in calendarDays" :key="index" 
+                         :class="['calendar-day p-2 text-center rounded-lg transition duration-300 ease-in-out cursor-pointer',
+                                  { 'today-circle': day.isToday,
+                                    'text-gray-400': !day.isCurrentMonth,
+                                    'hover:bg-indigo-100': !day.isSelected,
+                                    'bg-indigo-500 text-white': day.isSelected }]"
+                         @click="selectDate(day)">
+                        {{ day.date.getDate() }}
+                        <div v-if="day.events.length" class="mt-1">
+                            <div v-for="(event, eventIndex) in day.events.slice(0, 2)" :key="eventIndex" class="text-xs bg-indigo-200 text-indigo-800 rounded px-1 py-0.5 mb-0.5 truncate">
+                                {{ event.title }}
+                            </div>
+                            <div v-if="day.events.length > 2" class="text-xs text-indigo-600">+{{ day.events.length - 2 }} more</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:w-1/3 mt-4 lg:mt-0 lg:pl-4 overflow-y-auto">
+                <div class="p-4 bg-gray-100 rounded-lg h-full flex flex-col">
+                    <button @click="showAddEventModal = true" 
+                            :class="['mb-4 font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out w-full',
+                                     isPastDate ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white']"
+                            :disabled="isPastDate">
+                        Add Event
+                    </button>
+                    <h2 class="text-xl font-semibold mb-4">Events for {{ selectedDate.toDateString() }}</h2>
+                    <div v-if="selectedDateEvents.length" class="event-list flex-grow">
+                        <div v-for="event in selectedDateEvents" :key="event.id" class="mb-3 p-3 bg-white rounded shadow flex justify-between items-center">
+                            <div>
+                                <div class="font-semibold">{{ event.title }}</div>
+                                <div class="text-sm text-gray-600">{{ event.time }}</div>
+                            </div>
+                            <button @click="deleteEvent(event.id)" class="text-red-500 hover:text-red-700" :disabled="isPastDate">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div v-else class="text-gray-600 flex-grow">No events for this date.</div>
+                </div>
+            </div>
+        </div>
+        <div v-if="showAddEventModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg w-96">
+                <h2 class="text-xl font-semibold mb-4">Add Event</h2>
+                <input v-model="newEvent.title" placeholder="Event Title" class="w-full p-2 mb-4 border rounded">
+                <input v-model="newEvent.time" type="time" class="w-full p-2 mb-4 border rounded">
+                <div class="flex justify-end">
+                    <button @click="addEvent" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out mr-2">
+                        Add
+                    </button>
+                    <button @click="showAddEventModal = false" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div v-if="showMonthYearSelector" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg w-96">
+                <h2 class="text-xl font-semibold mb-4">Select Month and Year</h2>
+                <select v-model="selectedMonth" class="w-full p-2 mb-4 border rounded">
+                    <option v-for="(month, index) in monthNames" :key="index" :value="index">{{ month }}</option>
+                </select>
+                <input v-model.number="selectedYear" type="number" class="w-full p-2 mb-4 border rounded" min="1900" max="2100">
+                <div class="flex justify-end">
+                    <button @click="changeMonthYear" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out mr-2">
+                        Apply
+                    </button>
+                    <button @click="showMonthYearSelector = false" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script defer>
+        new Vue({
+            el: '#app',
+            data: {
+                currentDate: new Date(),
+                daysOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                selectedDate: new Date(),
+                events: JSON.parse(localStorage.getItem('events')) || [],
+                showAddEventModal: false,
+                showMonthYearSelector: false,
+                newEvent: { title: '', time: '' },
+                selectedMonth: new Date().getMonth(),
+                selectedYear: new Date().getFullYear(),
+                monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            },
+            computed: {
+                currentMonthName() {
+                    return this.currentDate.toLocaleString('default', { month: 'long' });
+                },
+                currentYear() {
+                    return this.currentDate.getFullYear();
+                },
+                calendarDays() {
+                    const year = this.currentDate.getFullYear();
+                    const month = this.currentDate.getMonth();
+                    const firstDay = new Date(year, month, 1);
+                    const lastDay = new Date(year, month + 1, 0);
+                    const daysInMonth = lastDay.getDate();
+                    const startingDayOfWeek = firstDay.getDay();
+
+                    let calendarDays = [];
+
+                    // Add days from previous month
+                    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                        const day = new Date(year, month, -i);
+                        calendarDays.push(this.createDayObject(day, false));
+                    }
+
+                    // Add days of current month
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const day = new Date(year, month, i);
+                        calendarDays.push(this.createDayObject(day, true));
+                    }
+
+                    // Add days from next month
+                    const remainingDays = 42 - calendarDays.length;
+                    for (let i = 1; i <= remainingDays; i++) {
+                        const day = new Date(year, month + 1, i);
+                        calendarDays.push(this.createDayObject(day, false));
+                    }
+
+                    return calendarDays;
+                },
+                selectedDateEvents() {
+                    return this.selectedDate ? this.events.filter(event => 
+                        new Date(event.date).toDateString() === this.selectedDate.toDateString()
+                    ) : [];
+                },
+                isPastDate() {
+                    return this.selectedDate < new Date(new Date().setHours(0,0,0,0));
+                }
+            },
+            methods: {
+                createDayObject(date, isCurrentMonth) {
+                    return {
+                        date: date,
+                        isCurrentMonth: isCurrentMonth,
+                        isToday: this.isToday(date),
+                        isSelected: this.isSelected(date),
+                        events: this.events.filter(event => new Date(event.date).toDateString() === date.toDateString())
+                    };
+                },
+                isToday(date) {
+                    const today = new Date();
+                    return date.getDate() === today.getDate() &&
+                           date.getMonth() === today.getMonth() &&
+                           date.getFullYear() === today.getFullYear();
+                },
+                isSelected(date) {
+                    return date.toDateString() === this.selectedDate.toDateString();
+                },
+                previousMonth() {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+                },
+                nextMonth() {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+                },
+                selectDate(day) {
+                    this.selectedDate = day.date;
+                },
+                addEvent() {
+                    if (this.newEvent.title && this.newEvent.time) {
+                        const newEvent = {
+                            id: Date.now(),
+                            title: this.newEvent.title,
+                            time: this.newEvent.time,
+                            date: this.selectedDate
+                        };
+                        this.events.push(newEvent);
+                        localStorage.setItem('events', JSON.stringify(this.events));
+                        this.showAddEventModal = false;
+                        this.newEvent = { title: '', time: '' };
+                    }
+                },
+                deleteEvent(id) {
+                    this.events = this.events.filter(event => event.id !== id);
+                    localStorage.setItem('events', JSON.stringify(this.events));
+                },
+                getCurrentTime() {
+                    const now = new Date();
+                    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                },
+                goToToday() {
+                    this.currentDate = new Date();
+                    this.selectedDate = new Date();
+                },
+                changeMonthYear() {
+                    this.currentDate = new Date(this.selectedYear, this.selectedMonth, 1);
+                    this.showMonthYearSelector = false;
+                }
+            },
+            mounted() {
+                this.newEvent.time = this.getCurrentTime();
+            }
+        });
+    </script>
+</body>
+</html>

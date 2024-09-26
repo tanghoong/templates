@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Todo App</title>
+    <link rel="preload" href="https://unpkg.com/react@17/umd/react.development.js" as="script">
+    <link rel="preload" href="https://unpkg.com/react-dom@17/umd/react-dom.development.js" as="script">
+    <link rel="preload" href="https://unpkg.com/babel-standalone@6/babel.min.js" as="script">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    </noscript>
+</head>
+<body class="bg-gray-100 font-['Poppins']">
+    <div id="root"></div>
+
+    <script type="text/babel" defer>
+        function TodoApp() {
+            const [todos, setTodos] = React.useState(() => {
+                const savedTodos = localStorage.getItem('todos');
+                return savedTodos ? JSON.parse(savedTodos) : [];
+            });
+            const [input, setInput] = React.useState('');
+            const [dueDate, setDueDate] = React.useState('');
+            const [filter, setFilter] = React.useState('all');
+
+            React.useEffect(() => {
+                localStorage.setItem('todos', JSON.stringify(todos));
+            }, [todos]);
+
+            React.useEffect(() => {
+                const checkNotifications = setInterval(() => {
+                    todos.forEach(todo => {
+                        const timeLeft = new Date(todo.dueDate) - new Date();
+                        if (timeLeft <= 1800000 && timeLeft > 0 && !todo.completed) { // 30 minutes
+                            const minutesLeft = Math.floor(timeLeft / 60000);
+                            if (minutesLeft % 10 === 0) {
+                                new Notification(`Reminder: ${todo.text}`, {
+                                    body: `Due in ${minutesLeft} minutes!`
+                                });
+                            }
+                        }
+                    });
+                }, 60000); // Check every minute
+
+                return () => clearInterval(checkNotifications);
+            }, [todos]);
+
+            React.useEffect(() => {
+                if (Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+            }, []);
+
+            const addTodo = () => {
+                if (input.trim() !== '' && dueDate) {
+                    setTodos([...todos, { 
+                        id: Date.now(), 
+                        text: input, 
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        dueDate: new Date(dueDate).toISOString()
+                    }]);
+                    setInput('');
+                    setDueDate('');
+                }
+            };
+
+            const removeTodo = (id) => {
+                const newTodos = todos.filter(todo => todo.id !== id);
+                setTodos(newTodos);
+            };
+
+            const toggleTodo = (id) => {
+                const newTodos = todos.map(todo => 
+                    todo.id === id ? { ...todo, completed: !todo.completed } : todo
+                );
+                setTodos(newTodos);
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    addTodo();
+                }
+            };
+
+            const filteredTodos = todos.filter(todo => {
+                if (filter === 'active') return !todo.completed;
+                if (filter === 'completed') return todo.completed;
+                return true;
+            });
+
+            const clearCompleted = () => {
+                const newTodos = todos.filter(todo => !todo.completed);
+                setTodos(newTodos);
+            };
+
+            return (
+                <div className="w-full max-w-lg mx-auto mt-4 sm:mt-10 bg-white p-4 sm:p-8 rounded-lg shadow-md">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8 text-purple-600">Todo List</h1>
+                    <div className="flex flex-col mb-4">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="What needs to be done?"
+                            className="p-2 border border-gray-300 rounded-t-md focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
+                        />
+                        <input
+                            type="datetime-local"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className="p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
+                        />
+                        <button onClick={addTodo} className="bg-purple-500 text-white px-4 py-2 rounded-b-md hover:bg-purple-600 transition duration-300">
+                            <i className="fas fa-plus mr-2"></i>Add Todo
+                        </button>
+                    </div>
+                    {filteredTodos.length > 0 ? (
+                        <ul className="space-y-2">
+                            {filteredTodos.map((todo) => (
+                                <li key={todo.id} className="flex flex-col bg-gray-50 p-3 rounded-md">
+                                    <div className="flex items-center justify-between">
+                                        <span 
+                                            className={`flex-grow cursor-pointer ${todo.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}
+                                            onClick={() => toggleTodo(todo.id)}
+                                        >
+                                            {todo.completed ? <i className="fas fa-check-circle mr-2 text-green-500"></i> : <i className="far fa-circle mr-2 text-gray-400"></i>}
+                                            {todo.text}
+                                        </span>
+                                        <button onClick={() => removeTodo(todo.id)} className="text-red-500 hover:text-red-700">
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        Created: {new Date(todo.createdAt).toLocaleString()}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                        Due: {new Date(todo.dueDate).toLocaleString()}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <div className="text-center text-gray-500 my-8">
+                            <p>No todos to show</p>
+                            <i className="fas fa-clipboard-list text-4xl mt-2"></i>
+                        </div>
+                    )}
+                    <div className="mt-6 flex flex-col sm:flex-row justify-between items-center text-sm">
+                        <span className="text-gray-600 mb-2 sm:mb-0">Total: {todos.length}</span>
+                        <div className="space-x-2 mb-2 sm:mb-0">
+                            <button onClick={() => setFilter('all')} className={`px-2 py-1 rounded ${filter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'}`}>All</button>
+                            <button onClick={() => setFilter('active')} className={`px-2 py-1 rounded ${filter === 'active' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'}`}>Active</button>
+                            <button onClick={() => setFilter('completed')} className={`px-2 py-1 rounded ${filter === 'completed' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'}`}>Completed</button>
+                        </div>
+                        <button onClick={clearCompleted} className="text-red-500 hover:text-red-700">Clear Completed</button>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<TodoApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
