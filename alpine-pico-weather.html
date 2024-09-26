@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: false }" :class="{ 'dark': darkMode }">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Cards</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --card-bg-light: rgba(255, 253, 247, 0.8);
+            --card-bg-dark: rgba(44, 62, 80, 0.8);
+            --text-color-light: #333333;
+            --text-color-dark: #f0f0f0;
+            --accent-color-light: #3498db;
+            --accent-color-dark: #e74c3c;
+            --blur-amount: 10px;
+        }
+        .dark {
+            --card-bg-light: var(--card-bg-dark);
+            --text-color-light: var(--text-color-dark);
+            --accent-color-light: var(--accent-color-dark);
+        }
+        body {
+            transition: background-color 0.3s, color 0.3s;
+            background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+            color: var(--text-color-light);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            font-size: 14px; /* Reduced base font size */
+        }
+        .dark body {
+            background: linear-gradient(45deg, #1f2937, #111827);
+        }
+        .weather-icon {
+            width: 60px; /* Reduced from 80px */
+            height: 60px; /* Reduced from 80px */
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            transition: transform 0.3s ease;
+        }
+        .weather-card:hover .weather-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .weather-card {
+            background-color: var(--card-bg-light);
+            border-radius: 20px;
+            padding: 20px; /* Reduced from 30px */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1),
+                        0 1px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+            backdrop-filter: blur(var(--blur-amount));
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .weather-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+        .weather-card:hover {
+            transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2),
+                        0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-color-light);
+        }
+        .city-name {
+            font-size: 1.5em; /* Reduced from 2em */
+            margin-bottom: 15px; /* Reduced from 20px */
+            color: var(--accent-color-light);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        .weather-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+        .weather-details {
+            flex-grow: 1;
+        }
+        .weather-details p {
+            margin: 8px 0; /* Reduced from 10px */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em; /* Reduced from 1.1em */
+            position: relative;
+        }
+        .weather-details p::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--accent-color-light), transparent);
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--accent-color-light);
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2em; /* Reduced from 1.5em */
+            cursor: pointer;
+            color: var(--text-color-light);
+            z-index: 1000;
+            width: 40px; /* Reduced from 50px */
+            height: 40px; /* Reduced from 50px */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .theme-toggle:hover {
+            transform: translateY(-5px) rotate(15deg);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin: 20px 0; /* Reduced from 30px */
+            color: var(--accent-color-light);
+            font-size: 2.5em; /* Reduced from 3em */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: 3px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px; /* Reduced from 30px */
+            padding: 20px;
+        }
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            h1 {
+                font-size: 3em; /* Reduced from 3.5em */
+            }
+        }
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            h1 {
+                font-size: 3.5em; /* Reduced from 4em */
+            }
+        }
+        @media (min-width: 1200px) {
+            .grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .weather-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .weather-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid transparent;
+            pointer-events: none;
+        }
+        .weather-card:hover {
+            transform: translateY(-5px);
+        }
+        .weather-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(90deg, var(--accent-color-light), var(--accent-color-light)),
+                linear-gradient(90deg, var(--accent-color-light), var(--accent-color-light)),
+                linear-gradient(0deg, var(--accent-color-light), var(--accent-color-light)),
+                linear-gradient(0deg, var(--accent-color-light), var(--accent-color-light));
+            background-repeat: no-repeat;
+            background-size: 100% 2px, 100% 2px, 2px 100%, 2px 100%;
+            background-position: 0 0, 0 100%, 0 0, 100% 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .weather-card:hover::after,
+        .weather-card:active::after {
+            opacity: 1;
+            animation: border-pulse 2s infinite ease-in-out;
+        }
+        @keyframes border-pulse {
+            0%, 100% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container" x-data="weatherApp()">
+        <button @click="darkMode = !darkMode" class="theme-toggle" aria-label="Toggle theme">
+            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+        </button>
+        <h1>Weather Cards</h1>
+        <div class="grid">
+            <template x-for="(cityData, cityName) in dummyData" :key="cityName">
+                <article class="weather-card">
+                    <h2 class="city-name" x-text="cityData.name"></h2>
+                    <img :src="'http://openweathermap.org/img/w/' + cityData.weather[0].icon + '.png'" :alt="cityData.weather[0].description" class="weather-icon">
+                    <div class="weather-info">
+                        <div class="weather-details">
+                            <p>
+                                <span>Temperature:</span>
+                                <strong x-text="cityData.main.temp + '°C'"></strong>
+                            </p>
+                            <p>
+                                <span>Feels like:</span>
+                                <strong x-text="getFeelEmoji(cityData.main.feels_like) + ' ' + cityData.main.feels_like + '°C '"></strong>
+                            </p>
+                            <p>
+                                <span>Humidity:</span>
+                                <strong x-text="cityData.main.humidity + '%'"></strong>
+                            </p>
+                            <p>
+                                <span>Description:</span>
+                                <strong x-text="cityData.weather[0].description"></strong>
+                            </p>
+                        </div>
+                    </div>
+                </article>
+            </template>
+        </div>
+    </main>
+
+    <script>
+        function weatherApp() {
+            return {
+                dummyData: {
+                    'Bali': {
+                        name: 'Bali',
+                        main: { temp: 27, feels_like: 29, humidity: 65 },
+                        weather: [{ description: 'Mostly sunny', icon: '01d' }]
+                    },
+                    'Bangkok': {
+                        name: 'Bangkok',
+                        main: { temp: 33, feels_like: 37, humidity: 70 },
+                        weather: [{ description: 'Partly cloudy', icon: '02d' }]
+                    },
+                    'Cebu': {
+                        name: 'Cebu',
+                        main: { temp: 30, feels_like: 33, humidity: 75 },
+                        weather: [{ description: 'Scattered showers', icon: '09d' }]
+                    },
+                    'Ho Chi Minh City': {
+                        name: 'Ho Chi Minh City',
+                        main: { temp: 32, feels_like: 36, humidity: 70 },
+                        weather: [{ description: 'Thunderstorm', icon: '11d' }]
+                    },
+                    'Jakarta': {
+                        name: 'Jakarta',
+                        main: { temp: 31, feels_like: 35, humidity: 75 },
+                        weather: [{ description: 'Overcast', icon: '04d' }]
+                    },
+                    'Kuala Lumpur': {
+                        name: 'Kuala Lumpur',
+                        main: { temp: 32, feels_like: 36, humidity: 70 },
+                        weather: [{ description: 'Scattered thunderstorms', icon: '11d' }]
+                    },
+                    'Manila': {
+                        name: 'Manila',
+                        main: { temp: 31, feels_like: 34, humidity: 75 },
+                        weather: [{ description: 'Light rain', icon: '10d' }]
+                    },
+                    'Phnom Penh': {
+                        name: 'Phnom Penh',
+                        main: { temp: 33, feels_like: 37, humidity: 65 },
+                        weather: [{ description: 'Sunny', icon: '01d' }]
+                    },
+                    'Phuket': {
+                        name: 'Phuket',
+                        main: { temp: 29, feels_like: 32, humidity: 80 },
+                        weather: [{ description: 'Light showers', icon: '09d' }]
+                    },
+                    'Sibu': {
+                        name: 'Sibu',
+                        main: { temp: 29, feels_like: 33, humidity: 80 },
+                        weather: [{ description: 'Overcast clouds', icon: '04d' }]
+                    },
+                    'Singapore': {
+                        name: 'Singapore',
+                        main: { temp: 30, feels_like: 34, humidity: 75 },
+                        weather: [{ description: 'Partly cloudy', icon: '02d' }]
+                    },
+                    'Yangon': {
+                        name: 'Yangon',
+                        main: { temp: 34, feels_like: 38, humidity: 65 },
+                        weather: [{ description: 'Mostly sunny', icon: '01d' }]
+                    }
+                },
+                getFeelEmoji(feels_like) {
+                    if (feels_like < 10) return '🥶';
+                    if (feels_like < 20) return '😊';
+                    if (feels_like < 30) return '😎';
+                    return '🥵';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
